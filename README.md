@@ -1,4 +1,4 @@
-# AI STLC MVP (Sardar Directory)
+# TestGenie
 
 ## Setup
 
@@ -25,3 +25,4 @@
 - Select testing type, level, and industry
 - Preview upload status
 - Generate AI test cases (Azure OpenAI integration)
+
