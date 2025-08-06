@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TestGenie - AI-Powered Test Case Generator</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --secondary-color: #8b5cf6;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-color: #1f2937;
+            --light-bg: #f8fafc;
+            --card-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            --border-radius: 12px;
+        }
+
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+
+        .main-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+        }
+
+        .header-card h1 {
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header-card .subtitle {
+            color: #6b7280;
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        .form-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 2rem;
+        }
+
+        .form-section {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 2px solid #e5e7eb;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .form-check {
+            background: var(--light-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 2px solid #e5e7eb;
+            transition: all 0.3s ease;
+        }
+
+        .form-check:hover {
+            border-color: var(--primary-color);
+        }
+
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .alert {
+            border-radius: 8px;
+            border: none;
+            padding: 1rem 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: #92400e;
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .alert-info {
+            background: rgba(59, 130, 246, 0.1);
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: #065f46;
+            border-left: 4px solid var(--success-color);
+        }
+
+        .preview-content {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.5rem;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .file-upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: var(--light-bg);
+        }
+
+        .file-upload-area:hover {
+            border-color: var(--primary-color);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .number-input-wrapper {
+            position: relative;
+        }
+
+        .number-input-wrapper .form-control {
+            padding-right: 3rem;
+        }
+
+        .input-group-text {
+            background: var(--light-bg);
+            border: 2px solid #e5e7eb;
+            border-left: none;
+            color: var(--dark-color);
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                margin: 0 1rem;
+            }
+            
+            .header-card, .form-card {
+                padding: 1.5rem;
+            }
+            
+            .header-card h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="main-container">
+    <div class="header-card">
+        <h1><i class="fas fa-robot"></i> TestGenie</h1>
+        <p class="subtitle">AI-Powered Test Case Generator for Modern Applications</p>
+    </div>
+    <div class="form-card">
+        <form method="POST" enctype="multipart/form-data">
+            <!-- File Upload Section -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    Upload Your File
+                </div>
+                <div class="file-upload-area">
+                    <i class="fas fa-file-upload upload-icon"></i>
+                    <div class="mb-3">
+                        <input class="form-control" type="file" name="file" id="file" required>
+                    </div>
+                    <small class="text-muted">
+                        Supported formats: TXT, CSV, XLSX, DOCX, JSON, PDF, XML, MD, HTML, ZIP, Images
+                    </small>
+                </div>
+            </div>
+
+            <!-- Test Configuration Section -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-cogs"></i>
+                    Test Configuration
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="test_type" class="form-label">
+                            <i class="fas fa-vial"></i> Testing Type
+                        </label>
+                        <select class="form-select" name="test_type" id="test_type" required>
+                            {% for t in test_types %}
+                            <option value="{{ t }}">{{ t }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="test_level" class="form-label">
+                            <i class="fas fa-layer-group"></i> Testing Level
+                        </label>
+                        <select class="form-select" name="test_level" id="test_level" required>
+                            {% for l in test_levels %}
+                            <option value="{{ l }}">{{ l }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="industry" class="form-label">
+                            <i class="fas fa-industry"></i> Industry Domain
+                        </label>
+                        <select class="form-select" name="industry" id="industry" required>
+                            {% for i in industries %}
+                            <option value="{{ i }}">{{ i }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="output_format" class="form-label">
+                            <i class="fas fa-file-code"></i> Output Format
+                        </label>
+                        <select class="form-select" name="output_format" id="output_format" required>
+                            {% for fmt in output_formats %}
+                            <option value="{{ fmt }}">{{ fmt }}</option>
+                            {% endfor %}
+                            <option value="API (Code)">API (Code)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Options Section -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-sliders-h"></i>
+                    Advanced Options
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="num_cases" class="form-label">
+                            <i class="fas fa-hashtag"></i> Number of Test Cases
+                        </label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" name="num_cases" id="num_cases" min="1" max="20" value="5" required>
+                            <span class="input-group-text">cases</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3" id="language_select_div" style="display:none;">
+                        <label for="code_language" class="form-label">
+                            <i class="fas fa-code"></i> Code Language
+                        </label>
+                        <select class="form-select" name="code_language" id="code_language">
+                            <option value="Python">Python</option>
+                            <option value="JavaScript">JavaScript</option>
+                            <option value="Java">Java</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="generate_ai" name="generate_ai">
+                    <label class="form-check-label" for="generate_ai">
+                        <i class="fas fa-brain"></i>
+                        <strong>Generate AI-Enhanced Test Cases</strong>
+                        <br>
+                        <small class="text-muted">Use artificial intelligence to create more comprehensive and intelligent test scenarios</small>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-magic"></i>
+                    Generate Test Cases
+                </button>
+            </div>
+        </form>
+    </div>
+    <!-- Messages and Results Section -->
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="form-card">
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Warning:</strong> {{ messages[0] }}
+            </div>
+        </div>
+      {% endif %}
+    {% endwith %}
+    
+    {% if preview %}
+        <div class="form-card">
+            <div class="section-title">
+                <i class="fas fa-eye"></i>
+                File Preview
+            </div>
+            <div class="alert alert-info">
+                <div class="preview-content">{{ preview|safe }}</div>
+            </div>
+        </div>
+    {% endif %}
+    
+    {% if generated_cases %}
+        <div class="form-card">
+            <div class="section-title">
+                <i class="fas fa-check-circle"></i>
+                Generated Test Cases
+            </div>
+            <div class="alert alert-success">
+                <div class="preview-content">{{ generated_cases | e }}</div>
+            </div>
+            <div class="text-center mt-3">
+                <a href="{{ url_for('download_test_cases') }}" class="btn btn-success">
+                    <i class="fas fa-download"></i>
+                    Download Test Cases (.txt)
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Show language selection for code/script output formats
+document.addEventListener('DOMContentLoaded', function() {
+    var outputFormat = document.getElementById('output_format');
+    var langDiv = document.getElementById('language_select_div');
+    
+    function toggleLang() {
+        if (["Selenium", "Cypress", "Playwright", "API (Code)"].includes(outputFormat.value)) {
+            langDiv.style.display = '';
+            langDiv.classList.remove('col-md-6');
+            langDiv.classList.add('col-md-6');
+        } else {
+            langDiv.style.display = 'none';
+        }
+    }
+    
+    outputFormat.addEventListener('change', toggleLang);
+    toggleLang();
+
+    // Enhanced file upload interaction
+    const fileInput = document.getElementById('file');
+    const uploadArea = document.querySelector('.file-upload-area');
+    
+    fileInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            uploadArea.style.borderColor = 'var(--success-color)';
+            uploadArea.style.backgroundColor = 'rgba(16, 185, 129, 0.05)';
+            
+            const fileName = this.files[0].name;
+            const fileSize = (this.files[0].size / 1024 / 1024).toFixed(2);
+            
+            // Update the upload area with file info
+            const uploadIcon = uploadArea.querySelector('.upload-icon');
+            uploadIcon.className = 'fas fa-file-check upload-icon';
+            uploadIcon.style.color = 'var(--success-color)';
+            
+            const smallText = uploadArea.querySelector('small');
+            smallText.innerHTML = `<strong>Selected:</strong> ${fileName} (${fileSize} MB)`;
+        }
+    });
+
+    // Form validation enhancement
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+        submitBtn.disabled = true;
+    });
+});
+</script>
+</body>
+</html>
