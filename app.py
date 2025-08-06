@@ -20,7 +20,7 @@ load_dotenv()
 
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'txt', 'csv', 'xlsx', 'xls', 'docx', 'json', 'pdf', 'xml', 'md', 'html', 'zip', 'png', 'jpg', 'jpeg', 'gif'}
-MAX_FILE_SIZE_MB = 5
+MAX_FILE_SIZE_MB = 50
 UPLOAD_RETENTION_SECONDS = 3600  # 1 hour
 
 app = Flask(__name__)
@@ -57,50 +57,97 @@ def get_file_preview(filepath, ext):
         elif ext == 'docx':
             doc = Document(filepath)
             text = '\n'.join([para.text for para in doc.paragraphs[:5]])
-            return f"<pre>{text}</pre>"
+            return f"<pre>{text[:1000] if text else 'No text content found in document.'}</pre>"
         elif ext == 'pdf':
             with open(filepath, 'rb') as f:
                 reader = PyPDF2.PdfReader(f)
                 if reader.pages:
                     text = reader.pages[0].extract_text()
-                    return f"<pre>{text[:1000]}</pre>"
+                    return f"<pre>{text[:1000] if text else 'No text content found on first page.'}</pre>"
                 else:
                     return "No pages found in PDF."
         elif ext == 'xml':
             with open(filepath, 'r', encoding='utf-8') as f:
-                dom = xml.dom.minidom.parseString(f.read())
+                content = f.read()
+                dom = xml.dom.minidom.parseString(content)
                 pretty_xml = dom.toprettyxml()
                 return f"<pre>{pretty_xml[:1000]}</pre>"
         elif ext == 'md':
             with open(filepath, 'r', encoding='utf-8') as f:
-                html = markdown.markdown(f.read())
-            return f"<div style='background:#f8f9fa;padding:1em;'>{html}</div>"
+                content = f.read()
+                html = markdown.markdown(content)
+            return f"<div style='background:#f8f9fa;padding:1em;'>{html[:1000]}</div>"
         elif ext == 'html':
             with open(filepath, 'r', encoding='utf-8') as f:
                 html = f.read()
             return f"<pre>{html[:1000]}</pre>"
         elif ext in ['png', 'jpg', 'jpeg', 'gif']:
-            with open(filepath, 'rb') as f:
-                img = Image.open(f)
-                buffered = io.BytesIO()
-                img.save(buffered, format=img.format)
-                img_str = base64.b64encode(buffered.getvalue()).decode()
-                return f"<img src='data:image/{ext};base64,{img_str}' style='max-width:300px;max-height:300px;'/>"
+            try:
+                with open(filepath, 'rb') as f:
+                    img = Image.open(f)
+                    buffered = io.BytesIO()
+                    # Convert to RGB if necessary (for PNG with transparency)
+                    if img.mode in ('RGBA', 'LA'):
+                        img = img.convert('RGB')
+                    img.save(buffered, format='JPEG')
+                    img_str = base64.b64encode(buffered.getvalue()).decode()
+                    return f"<img src='data:image/jpeg;base64,{img_str}' style='max-width:300px;max-height:300px;'/>"
+            except Exception as img_error:
+                return f"Image preview unavailable: {str(img_error)}"
         elif ext == 'zip':
             with zipfile.ZipFile(filepath, 'r') as zipf:
                 file_list = zipf.namelist()
-            return f"<pre>ZIP Contents:\n" + '\n'.join(file_list[:10]) + "</pre>"
+            return f"<pre>ZIP Contents ({len(file_list)} files):\n" + '\n'.join(file_list[:10]) + ("\n... and more" if len(file_list) > 10 else "") + "</pre>"
         else:
             return "Preview not available for this file type."
     except Exception as e:
-        return f"Error previewing file: {e}"
+        return f"Error previewing file: {str(e)}"
 
-def generate_ai_test_cases(filepath, test_type, test_level, industry, output_format, num_cases, code_language, strict_scenarios):
+def generate_ai_test_cases(filepath, test_type, test_level, industry, output_format, num_cases, code_language, strict_scenarios, ext):
     try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            content = f.read(500)
-    except Exception:
-        content = "File preview not available."
+        # Handle different file types for content extraction
+        if ext == 'txt':
+            with open(filepath, 'r', encoding='utf-8') as f:
+                content = f.read(1000)
+        elif ext == 'csv':
+            df = pd.read_csv(filepath)
+            content = df.head(10).to_string()
+        elif ext in ['xlsx', 'xls']:
+            df = pd.read_excel(filepath)
+            content = df.head(10).to_string()
+        elif ext == 'json':
+            with open(filepath, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            content = json.dumps(data, indent=2)[:1000]
+        elif ext == 'docx':
+            doc = Document(filepath)
+            content = '\n'.join([para.text for para in doc.paragraphs[:10]])
+        elif ext == 'pdf':
+            with open(filepath, 'rb') as f:
+                reader = PyPDF2.PdfReader(f)
+                if reader.pages:
+                    content = reader.pages[0].extract_text()[:1000]
+                else:
+                    content = "PDF document with no extractable text"
+        elif ext == 'xml':
+            with open(filepath, 'r', encoding='utf-8') as f:
+                content = f.read(1000)
+        elif ext == 'md':
+            with open(filepath, 'r', encoding='utf-8') as f:
+                content = f.read(1000)
+        elif ext == 'html':
+            with open(filepath, 'r', encoding='utf-8') as f:
+                content = f.read(1000)
+        elif ext in ['png', 'jpg', 'jpeg', 'gif']:
+            content = f"Image file: {filepath}. Image analysis would require computer vision capabilities."
+        elif ext == 'zip':
+            with zipfile.ZipFile(filepath, 'r') as zipf:
+                file_list = zipf.namelist()
+            content = f"ZIP archive containing: {', '.join(file_list[:10])}"
+        else:
+            content = "File type not supported for content analysis."
+    except Exception as e:
+        content = f"Could not extract content from file: {str(e)}"
     # Dynamic prompt with explicit instructions and examples
     strict_note = "Generate code only for the scenario(s) described below. Do not add extra scenarios." if strict_scenarios else ""
     format_instructions = {
@@ -160,15 +207,29 @@ def cleanup_uploads():
             if now - os.path.getmtime(fpath) > UPLOAD_RETENTION_SECONDS:
                 os.remove(fpath)
 
-def is_safe_file_content(content):
-    # Basic check: no binary, no dangerous HTML/script tags
-    if '\x00' in content:
-        return False
-    dangerous = ['<script', '<iframe', '<object', '<embed', 'eval(', 'base64,']
-    for d in dangerous:
-        if d in content.lower():
+def is_safe_file_content(filepath, ext):
+    try:
+        # For binary file types, we don't need to check content safety
+        if ext in ['png', 'jpg', 'jpeg', 'gif', 'pdf', 'xlsx', 'xls', 'docx', 'zip']:
+            return True
+        
+        # For text-based files, check content safety
+        with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+            content = f.read(10000)  # Read first 10KB for safety check
+        
+        # Basic check: no binary, no dangerous HTML/script tags
+        if '\x00' in content:
             return False
-    return True
+        dangerous = ['<script', '<iframe', '<object', '<embed', 'eval(', 'base64,']
+        for d in dangerous:
+            if d in content.lower():
+                return False
+        return True
+    except Exception:
+        # If we can't read the file, assume it's safe for binary types
+        if ext in ['png', 'jpg', 'jpeg', 'gif', 'pdf', 'xlsx', 'xls', 'docx', 'zip']:
+            return True
+        return False
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -201,9 +262,9 @@ def index():
             file.save(filepath)
             print(f"File saved to {filepath}")
             ext = filename.rsplit('.', 1)[1].lower()
-            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
-                content = f.read(10000)
-            if not is_safe_file_content(content):
+            
+            # Check file safety based on file type
+            if not is_safe_file_content(filepath, ext):
                 os.remove(filepath)
                 flash('File content is not safe or valid.')
                 return render_template('index.html',
@@ -213,6 +274,8 @@ def index():
                     output_formats=output_formats,
                     preview=preview,
                     generated_cases=generated_cases)
+            
+            # Generate file preview
             preview = get_file_preview(filepath, ext)
             test_type = request.form.get('test_type')
             test_level = request.form.get('test_level')
@@ -223,7 +286,7 @@ def index():
             code_language = request.form.get('code_language', 'Python')
             strict_scenarios = bool(request.form.get('strict_scenarios'))
             if generate_ai:
-                generated_cases = generate_ai_test_cases(filepath, test_type, test_level, industry, output_format, num_cases, code_language, strict_scenarios)
+                generated_cases = generate_ai_test_cases(filepath, test_type, test_level, industry, output_format, num_cases, code_language, strict_scenarios, ext)
                 if not generated_cases or not generated_cases.strip():
                     generated_cases = 'No test cases could be generated for the provided scenario(s). Please check your input or try again with less strict settings.'
                 generated_cases_cache['content'] = generated_cases
